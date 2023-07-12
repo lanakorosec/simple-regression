@@ -1,0 +1,183 @@
+---
+title: "simple_regression"
+author: "Lana Gruncic Krajnc"
+date: "2023-07-12"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+The file COLLIN.txt contains data for 21 110m hurdles runs by runner Collin Jackson:
+
+wind speed = windspeed (m/s) and 
+
+running time = time (s). 
+
+The data were obtained in an experiment in an enclosed space (Source: Daly et al., p. 525). The wind speed was selected in advance for each run separately. Negative wind speed values mean that the wind blew into the runner's chest. We want to explain how wind speed affects 110m running time?
+
+
+
+## Data presentation
+
+```{r, echo=FALSE}
+
+library(ggplot2)
+library(gridExtra)
+
+#nalozimo podatke
+COLLIN <- read.delim("COLLIN.txt")
+
+#class(COLLIN$windspeed)
+#class(COLLIN$time)
+
+
+#plot(time ~ windspeed, data = COLLIN)
+
+ggplot(data=COLLIN, mapping = aes(x=windspeed, y= time))+
+  geom_point()+
+  geom_smooth(method = "lm", se = FALSE) +
+  xlab("Wind speed (m/s)") + ylab("time (s)")
+
+
+```
+
+
+## Model parameters estimates
+
+```{r, echo=FALSE}
+CollinModel = lm(time ~ windspeed, data = COLLIN)
+summary(CollinModel)
+
+```
+
+
+The expected 110 metres hurdles run result in no wind (windspeed = 0 m/s) is 13.32 seconds. 1 m/s increase in wind speed results in almost 8.5 hundreths decrease in 110 metres hurdles run result.
+
+
+## Linear model assumptions check
+
+```{r, echo=FALSE}
+
+par(mfrow = c(2,2))
+plot(CollinModel)
+
+```
+
+The points on Residuals vs Fitted plot are randomly distributed around the value of 0. Smoother is roughly on the x-axis. 
+
+Normal Q-Q plot shows points approximately on the dashed line. 
+
+The model fits the data reasonably well.
+
+
+## Estimators explained including confidence intervals
+
+
+```{r, echo=FALSE}
+
+confint(CollinModel)
+
+```
+
+With 95% confidence, we expect the time/speed of the 110 meters in no wind to fall between 13.25 and 13.39 seconds.
+
+
+If the wind speed increases by 1 m/s, we expect with 95% confidence that the time/speed of the 110 meter run will decrease between 3.5 and 13.4 hundredths of a second.
+
+## Coefficient of determination
+
+It provides a measure of how well observed outcomes are replicated by the model, based on the proportion of total variation of outcomes explained by the model.
+
+```{r, echo=FALSE}
+
+CollinSum = summary(CollinModel)
+CollinSum$r.squared
+
+```
+
+
+The coefficient of determination R2 has a value of 1 if all the variability for y is explained by the regression model.
+
+In our case, the value of R2 is 0.4033; so 40% of the variability in y is explained by the regression model.
+
+
+## The two null hypotheses being tested and results explained. 
+
+```{r}
+
+CollinSum$coefficients
+
+```
+
+
+The first null hypothesis assumes y is independent of x and the graph would give us a horizontal line. In our case, we reject the null hypothesis with 95% confidence. the p-value is smaller than 0.5 and we accept the conclusion that y depends on x.
+
+In this case, we can also observe the null hypothesis for beta0 being 0. The value when all predictors of the model are equal to 0. We also reject this null hypothesis and assume with 95% confidence that beta0 is characteristic.
+
+
+In no wind, the time/result of the 110 meter run would be 13.32 m/s.
+
+
+## Predicted values for chosen wind speeds
+
+
+
+```{r}
+
+# izbrane vrednosti napovedne spremenljivke
+cas_teka.napovedi<-data.frame(windspeed=c(-1,0,1,4))
+
+# povprečne napovedi
+povp.napovedi.Collin<-predict(CollinModel, cas_teka.napovedi, interval="confidence")
+average_predict = data.frame(cbind(cas_teka.napovedi,povp.napovedi.Collin ))
+average_predict
+
+# posamične napovedi
+pos.napovedi.Collin<-predict(CollinModel, cas_teka.napovedi, interval="prediction")
+individual_predict = data.frame(cbind(cas_teka.napovedi,pos.napovedi.Collin ))
+individual_predict
+
+```
+
+As you can see, individual predicts have broader confidence intervals.
+
+
+
+```{r}
+
+
+Confint = confint(CollinModel)
+Confint = data.frame(Confint)
+Confint1 = data.frame(windspeed=c(CollinModel$coefficients[[2]]), lwr = c(Confint$X2.5..[[1]]), fit = CollinModel$coefficients[[1]], upr = Confint$X97.5..[[1]])
+
+colcol = CollinModel$coefficients[[2]]
+
+plot1 = ggplot(average_predict, aes(x=windspeed, y = fit))+
+  geom_point()+
+  geom_errorbar(aes(ymin = `lwr`, ymax = `upr`))+
+  geom_errorbar(data = Confint1, aes(ymin = `lwr`, ymax = `upr`),color = "red")+
+  geom_point(data = Confint1, aes(windspeed, fit, group=1),color = "red", size= 2)+
+  ggtitle("Average predict")
+
+plot2 = ggplot(individual_predict, aes(x=windspeed, y = fit))+
+  geom_point()+
+  geom_errorbar(aes(ymin = `lwr`, ymax = `upr`))+
+  ggtitle("Individual predict")
+
+grid.arrange(plot1, plot2, nrow=1, ncol=2)  
+
+
+
+
+
+```
+
+
+# Conclusion
+
+Simple linear regression is used to model the relationship between two continuous variables. The objective is to predict the value of an output variable (or response - in our case run time/result) based on the value of an input (or predictor - in our case wind speed) variable.
+
+
