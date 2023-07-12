@@ -22,7 +22,7 @@ The data were obtained in an experiment in an enclosed space (Source: Daly et al
 
 ## Data presentation
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 
 library(ggplot2)
 library(gridExtra)
